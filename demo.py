@@ -1,125 +1,71 @@
+import pandas as pd
 import torch
-import torch.nn as nn
+from transformers import BertTokenizer, BertForQuestionAnswering
 import torch.optim as optim
-from pytorch_pretrained_bert import BertTokenizer, BertModel, BertForMaskedLM, BertForPreTraining, BertAdam
-import os, random
-from read import readPairs
 from tqdm import tqdm
 
-# modelpath = "bert-base-uncased"
-# tokenizer = BertTokenizer.from_pretrained(modelpath)
-# model = BertForMaskedLM.from_pretrained(modelpath)
+# Load the CSV file
+df = pd.read_csv('data.csv')
 
-def transfer(pair, tokenizer):
-	# tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-	# pairs = ['[CLS] do you like apple ? [SEP] ', 'i like apple so much .']
-	input_token, label_token = pair[0], pair[1]
-	input_text, label_text = tokenizer.tokenize(input_token), tokenizer.tokenize(label_token)
+# Split into input (queries) and output (answers)
+queries = df['Query'].tolist()
+answers = df['Answer'].tolist()
 
-	for word in label_text:
-		input_text.append('[MASK]')
-	#print(input_text)
+# Load BERT tokenizer
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
-	for _ in range(128-len(input_text)):
-		input_text.append('[MASK]')
-	#print(input_text)
+# Tokenize and encode the inputs
+encoded_inputs = tokenizer(queries, padding=True, truncation=True, return_tensors='pt')
 
-	indexed_tokens = tokenizer.convert_tokens_to_ids(input_text)
-	#print(indexed_tokens)
+# Load pre-trained BERT model for fine-tuning
+model = BertForQuestionAnswering.from_pretrained('bert-base-uncased')
 
-	input_tensor = torch.tensor([indexed_tokens])
-	#print(input_tensor)
+# Define optimizer and learning rate
+optimizer = optim.AdamW(model.parameters(), lr=2e-5)
 
-	loss_ids = [-1] * len(tokenizer.tokenize(input_token))
-	loss_ids += tokenizer.convert_tokens_to_ids(label_text)
+# Convert answers to tensors
+answers_start_token = tokenizer.encode(answers, add_special_tokens=False, truncation=True, return_tensors='pt')
+answers_end_token = tokenizer.encode(answers, add_special_tokens=False, truncation=True, return_tensors='pt')
 
-	loss_ids.append(tokenizer.convert_tokens_to_ids(['[SEP]'])[0])
-	for _ in range(128-len(loss_ids)):
-		loss_ids.append(-1)
-	loss_tensors = torch.tensor([loss_ids])
-	# print(loss_tensors)
-	return [input_tensor, loss_tensors]
+# Fine-tune the model
+num_epochs = 3  # Adjust based on convergence
+batch_size = 19  # Adjust based on your resources
 
-def process(pairs, tokenizer):
-	tensor_pairs = []
-	for pair in pairs:
-		input_text, label_text = tokenizer.tokenize(pair[0]), tokenizer.tokenize(pair[1])
-		if len(input_text) + len(label_text) < 128:
-			tensor_pair = transfer(pair, tokenizer)
-			tensor_pairs.append(tensor_pair)
-	print("Tokenize Trim {} Sentence Pair...".format(len(tensor_pairs)))
-	return tensor_pairs
+model.train()
+print("TRAINING...")
+for epoch in range(num_epochs):
+    num_batches = len(encoded_inputs['input_ids']) // batch_size
+    for i in tqdm(range(num_batches)):
+        start_idx = i * batch_size
+        end_idx = min(start_idx + batch_size, len(encoded_inputs['input_ids']))
 
-def train(tensor_pairs, model, batch_size):
-	optimizer = torch.optim.Adamax(model.parameters(), lr = 5e-3)
-	model.train()
-	for i in tqdm(range(1, 501)):
-		pair_batches = random.sample(tensor_pairs, batch_size)
-		input_batch = [tensor[0] for tensor in pair_batches]
-		label_batch = [tensor[1] for tensor in pair_batches]
-		input_tensor = torch.cat(input_batch, 0)
-		label_tensor = torch.cat(label_batch, 0)
+        optimizer.zero_grad()
+        batch_inputs = {key: val[start_idx:end_idx] for key, val in encoded_inputs.items()}
+        batch_answers_start = answers_start_token[start_idx:end_idx].squeeze(1)  # Remove extra dimension
+        batch_answers_end = answers_end_token[start_idx:end_idx].squeeze(1)  # Remove extra dimension
 
-		loss = model(input_tensor, masked_lm_labels=label_tensor)
-		eveloss = loss.mean().item()
-		optimizer.zero_grad()
-		loss.backward()
-		optimizer.step()
-		print("step "+ str(i) + " : " + str(eveloss))
-		if not os.path.exists("model"):
-			os.makedirs("model")
-		if i % 50 == 0:
-			torch.save(model, os.path.join("model/", '{}_{}_backup.tar'.format(i, 1)))
+        # Ensure single-target tensors
+        batch_answers_start = batch_answers_start.view(-1)
+        batch_answers_end = batch_answers_end.view(-1)
 
+        outputs = model(**batch_inputs, start_positions=batch_answers_start, end_positions=batch_answers_end)
+        loss = outputs.loss
+        loss.backward()
+        optimizer.step()
 
-def infer(tokenizer):
-	print("Infer...")
-	file = "model/500_1_backup.tar"
-	model = torch.load(file)
-	model.eval()
-	with torch.no_grad():
-		while(1):
-			#try:
-			question = input("> ")
-			if question == 'q': break
-			question = '[CLS] ' + question + ' [SEP] '
-			tokenized_text = tokenizer.tokenize(question)
-			# print(tokenized_text)
-			for _ in range(128-len(tokenized_text)):
-				tokenized_text.append("[MASK]")
-			indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
-			tokens_tensor = torch.tensor([indexed_tokens])
-			predictions = model(tokens_tensor)
-			start = len(tokenizer.tokenize(question))
-			predicted_tokens = []
-			while start < len(predictions[0]):
-				predicted_index = torch.argmax(predictions[0,start]).item()
-				predicted_token = tokenizer.convert_ids_to_tokens([predicted_index])
-				if '[SEP]' in predicted_token or '.' in predicted_token:
-					break
-				predicted_tokens += predicted_token
-				start+=1
-			result = " ".join(predicted_tokens)
-			print(result)
-			# except Exception:
-			# 	print("KeyError!")
+# Set model to evaluation mode
+model.eval()
 
-if __name__ == "__main__":
-	corpus = "dialogue.txt"
-	pairs = readPairs(corpus)
+# Example inference
+print("INFERENCE...")
+query = "Your query goes here"
+encoded_query = tokenizer.encode_plus(query, return_tensors='pt')
 
-	print("Load Bert Tokenizer and Model...")
-	modelpath = "bert-base-uncased"
-	tokenizer = BertTokenizer.from_pretrained(modelpath)
-	model = BertForMaskedLM.from_pretrained(modelpath)
+# Perform inference
+with torch.no_grad():
+    output = model(**encoded_query)
 
-	print("Transfer to Tensor...")
-	tensor_pairs = process(pairs, tokenizer)
-	
-	print("Start Training...")
-	batch_size = 32
-	train(tensor_pairs, model, batch_size)
-	
-	# modelpath = "bert-base-uncased"
-	# tokenizer = BertTokenizer.from_pretrained(modelpath)
-	# infer(tokenizer)
+# Decode the output to get the answer
+answer_start = torch.argmax(output.start_logits)
+answer_end = torch.argmax(output.end_logits)
+answer = tokenizer.decode(encoded_query['input_ids'][0][answer_start:answer_end+1])
