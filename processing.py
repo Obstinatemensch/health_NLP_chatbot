@@ -1,7 +1,8 @@
+import sys
 import pandas as pd
 
 # Read the text file and split the data into interactions
-with open('healthcaremagic_dialogue_4.txt', 'r') as file:
+with open(sys.argv[1], 'r') as file:
     data = file.read().split('\nid=')
 
 # Initialize lists to store queries and answers
@@ -13,7 +14,7 @@ for curData in data:
     curData = curData.split('\n')
     pInd = (curData.index('Patient:'))
     dInd = (curData.index('Doctor:'))
-    curQuery = curData[4].replace(',',';')
+    curQuery = curData[4].replace(',',';') + "."
     for j in range(pInd+1,dInd):
         curQuery += curData[j].replace(',',';')
     queries.append(curQuery)
@@ -26,4 +27,4 @@ for curData in data:
 
 # Create a DataFrame and save it to a CSV file
 df = pd.DataFrame({'Query': queries, 'Answer': answers})
-df.to_csv('output.csv', index=False)
+df.to_csv(sys.argv[2], index=False)
