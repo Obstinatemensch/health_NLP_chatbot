@@ -1,8 +1,100 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Health Chatbot</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        body {
+            background-color: #f4f4f4;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .chat-container {
+            padding: 20px;
+            height: 300px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 10px;
+            flex-direction: column; 
+        }
+
+        .user-message {
+            background-color: #4caf50;
+            color: #fff;
+            border-radius: 5px;
+            padding: 10px;
+            max-width: 70%;
+            word-wrap: break-word;
+            align-self: flex-end;
+        }
+
+        .bot-message {
+            background-color: #f5f5f5;
+            color: #333;
+            border-radius: 5px;
+            padding: 10px;
+            max-width: 70%;
+            word-wrap: break-word;
+            align-self: flex-start;
+        }
+
+        .chat-form {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+
+        .send-button {
+            background-color: #4caf50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .send-button:hover {
+            background-color: #45a049;
+        }
+
+        /* Disclaimer Styles */
+        .disclaimer {
+            font-size: 12px;
+            color: #666;
+            margin: 10px 20px 20px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -11,22 +103,23 @@
         <!-- Disclaimer -->
         <p class="disclaimer">Disclaimer: This chatbot is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.</p>
         
-        <div class="chat-container">
-            <form id="chatForm" class="chat-form">
-                <input type="text" id="userInput" class="input-field" placeholder="Type your message...">
-                <button type="submit" class="send-button">Send</button>
-            </form>
-            <div id="chatResponse" class="response"></div>
-        </div>
+        <div class="chat-container" id="chatResponse"></div>
+        <form id="chatForm" class="chat-form">
+            <input type="text" id="userInput" class="input-field" placeholder="Type your message...">
+            <button type="submit" class="send-button">Send</button>
+        </form>
     </div>
-
+    
     <script>
-        // JavaScript comment
         document.getElementById('chatForm').addEventListener('submit', function(event) {
             event.preventDefault();
         
             let userInput = document.getElementById('userInput').value;
-        
+            let chatResponse = document.getElementById('chatResponse');
+
+            // Display user message
+            chatResponse.innerHTML += `<div class="message"><div class="user-message">${userInput}</div></div>`;
+
             fetch('/chat', {
                 method: 'POST',
                 headers: {
@@ -36,7 +129,9 @@
             })
             .then(response => response.json())
             .then(data => {
-                document.getElementById('chatResponse').innerText = data.message; // Update chatResponse with the response message
+                // Display bot response
+                chatResponse.innerHTML += `<div class="message"><div class="bot-message">${data.message}</div></div>`;
+                document.getElementById('userInput').value = ''; // Clear input field
             })
             .catch(error => console.error('Error:', error));
         });
