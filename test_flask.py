@@ -41,7 +41,9 @@ def index():
 @app.route('/chat', methods=['POST'])
 def chat():
     user_input = request.json['message']
+    print("recvd "+user_input)
     bot_response = health_bot_response(user_input)
+    print("sending "+bot_response)
     return jsonify({'message': bot_response})
 
 if __name__ == '__main__':
