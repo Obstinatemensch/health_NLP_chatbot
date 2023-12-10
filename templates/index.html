@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Health Chatbot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Health Chatbot</h1>
+        <div class="chat-container">
+            <form id="chatForm" class="chat-form">
+                <input type="text" id="userInput" class="input-field" placeholder="Type your message...">
+                <button type="submit" class="send-button">Send</button>
+            </form>
+            <div id="chatResponse" class="response"></div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript comment
+        document.getElementById('chatForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+        
+            let userInput = document.getElementById('userInput').value;
+        
+            fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 'message': userInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('chatResponse').innerText = data.message; // Update chatResponse with the response message
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+</html>
