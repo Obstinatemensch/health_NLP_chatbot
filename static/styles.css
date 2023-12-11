@@ -1,3 +1,4 @@
+/* Reset and General Styles */
 body {
     font-family: Arial, sans-serif;
     background-color: #f7f7f7;
@@ -14,6 +15,7 @@ h1 {
     text-align: center;
 }
 
+/* Chatbot Interface Styles */
 .chat-container {
     border: 1px solid #ccc;
     border-radius: 5px;
@@ -47,4 +49,94 @@ h1 {
     background-color: #007bff;
     color: white;
     cursor: pointer;
+}
+
+/* Inline Styles from HTML */
+body {
+    background-color: #f4f4f4;
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    max-width: 400px;
+    width: 100%;
+}
+
+.chat-container {
+    padding: 20px;
+    height: 300px;
+    overflow-y: auto;
+    border-bottom: 1px solid #ddd;
+}
+
+.message {
+    display: flex;
+    margin-bottom: 10px;
+    flex-direction: column; 
+}
+
+.user-message {
+    background-color: #4caf50;
+    color: #fff;
+    border-radius: 5px;
+    padding: 10px;
+    max-width: 70%;
+    word-wrap: break-word;
+    align-self: flex-end;
+}
+
+.bot-message {
+    background-color: #f5f5f5;
+    color: #333;
+    border-radius: 5px;
+    padding: 10px;
+    max-width: 70%;
+    word-wrap: break-word;
+    align-self: flex-start;
+}
+
+.chat-form {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+}
+
+.input-field {
+    flex: 1;
+    padding: 10px;
+    border: 1;
+    border-radius: 5px;
+    margin-right: 10px;
+    font-size: 14px;
+}
+
+.send-button {
+    background-color: #4caf50;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.send-button:hover {
+    background-color: #45a049;
+}
+
+/* Disclaimer Styles */
+.disclaimer {
+    font-size: 10px; /* Adjusted smaller font size */
+    color: #666;
+    margin: 10px 20px 20px;
 }

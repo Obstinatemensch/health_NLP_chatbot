@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Health Chatbot</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <style>
+    <!--- <style>
         body {
             background-color: #f4f4f4;
             font-family: 'Arial', sans-serif;
@@ -94,7 +94,7 @@
             color: #666;
             margin: 10px 20px 20px;
         }
-    </style>
+    </style> -->
 </head>
 <body>
     <div class="container">
@@ -113,13 +113,15 @@
     <script>
         document.getElementById('chatForm').addEventListener('submit', function(event) {
             event.preventDefault();
-        
+    
             let userInput = document.getElementById('userInput').value;
             let chatResponse = document.getElementById('chatResponse');
-
+            document.getElementById('userInput').value = ''; // Clear input field content
+                document.getElementById('userInput').focus(); // Keep focus on the input field
+    
             // Display user message
             chatResponse.innerHTML += `<div class="message"><div class="user-message">${userInput}</div></div>`;
-
+    
             fetch('/chat', {
                 method: 'POST',
                 headers: {
@@ -131,7 +133,7 @@
             .then(data => {
                 // Display bot response
                 chatResponse.innerHTML += `<div class="message"><div class="bot-message">${data.message}</div></div>`;
-                document.getElementById('userInput').value = ''; // Clear input field
+                
             })
             .catch(error => console.error('Error:', error));
         });

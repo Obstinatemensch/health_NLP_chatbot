@@ -9,9 +9,11 @@ FLAG = False
 
 def init():
     global finetuned_model, tokenizer, FLAG
-    last_checkpoint = r"C:\Users\praya\Downloads\NLP\health_NLP_chatbot\results\checkpoint-18000"
+    # last_checkpoint = r"C:\Users\praya\Downloads\NLP\health_NLP_chatbot\results\checkpoint-18000"
+    last_checkpoint =  "google/flan-t5-base"
     finetuned_model = T5ForConditionalGeneration.from_pretrained(last_checkpoint)
     tokenizer = T5Tokenizer.from_pretrained(last_checkpoint)
+    print("initialized with google/flan-t5-base" )
     FLAG = True
 
 def health_bot_response(user_input):
